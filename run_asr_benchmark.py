@@ -28,9 +28,9 @@ import csv
 import json
 import os
 
-from paper_asr import ASR_CONDITIONS, transcribe
-from paper_detectors import DETECTORS, ENTITY_MAPS, run_detector
-from paper_scoring import (score_row, write_grouped_metrics, aggregate,
+from asr import ASR_CONDITIONS, transcribe
+from detectors import DETECTORS, ENTITY_MAPS, run_detector
+from scoring import (score_row, write_grouped_metrics, aggregate,
                             build_alignment, alignment_is_reliable, map_span_to_original,
                             tokenize_words_with_offsets)
 
@@ -206,3 +206,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

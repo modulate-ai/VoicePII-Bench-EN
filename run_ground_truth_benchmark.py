@@ -22,8 +22,8 @@ import csv
 import json
 import os
 
-from paper_detectors import DETECTORS, ENTITY_MAPS, run_detector
-from paper_scoring import score_row, write_grouped_metrics, aggregate
+from detectors import DETECTORS, ENTITY_MAPS, run_detector
+from scoring import score_row, write_grouped_metrics, aggregate
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DATASET_PATH = os.path.join(SCRIPT_DIR, "pii_phi_voice_benchmark_dataset.csv")
@@ -129,3 +129,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
