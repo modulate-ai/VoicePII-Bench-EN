@@ -1,6 +1,3 @@
-# VoicePII-Bench-EN
-Benchmark measuring how ASR transcription quality affects PII/PHI detection across three detector architectures. 545-clip synthetic English voice dataset included.
-
 # PII/PHI Detection Under Real-World ASR Noise: Benchmark and Code
 
 This repository contains the dataset and benchmark harness for our paper
@@ -46,13 +43,26 @@ Limitations in the paper).
 
 ## Setup
 
+We recommend a virtual environment rather than installing into your
+system Python; on Debian/Ubuntu-based systems in particular, a bare `pip
+install` outside a virtual environment will typically fail outright with
+an `externally-managed-environment` error.
+
 ```bash
+python3 -m venv venv
+source venv/bin/activate   # on Windows: venv\Scripts\activate
+
 pip install torch transformers>=5.4.0 gliner pii-redaction
 
 # Cohere Transcribe is a gated model -- accept its license on the model
 # page, then authenticate:
 huggingface-cli login
 ```
+
+Each new terminal session requires re-running `source venv/bin/activate`
+before using any script in this repository -- if a command fails with a
+`ModuleNotFoundError` for a package you already installed, this is the
+most common cause.
 
 GPU acceleration (CUDA or Apple Silicon MPS) is auto-detected and strongly
 recommended; all three detectors and both ASR systems fall back to CPU
