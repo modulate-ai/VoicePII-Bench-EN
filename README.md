@@ -19,12 +19,12 @@ upon acceptance.
 |---|---|
 | `pii_phi_voice_benchmark_dataset.csv` | 545 ground-truth clips: script text, entity class, target PII/PHI value, and character-offset span |
 | `audio_en/` | Corresponding synthesized audio for each clip (`<script_id>.mp3`) |
-| `paper_detectors.py` | Entity maps and detection functions for the 3 evaluated detectors |
-| `paper_asr.py` | Transcription functions for the 2 evaluated ASR systems |
-| `paper_scoring.py` | Span-matching scoring logic (strict / trimmed-strict / compound-strict / lenient) |
+| `detectors.py` | Entity maps and detection functions for the 3 evaluated detectors |
+| `asr.py` | Transcription functions for the 2 evaluated ASR systems |
+| `scoring.py` | Span-matching scoring logic (strict / trimmed-strict / compound-strict / lenient) |
 | `run_ground_truth_benchmark.py` | Scores a detector directly against ground-truth text (the oracle condition) |
 | `run_asr_benchmark.py` | Transcribes audio with a chosen ASR system, then scores a detector against the resulting transcript |
-| `build_paper_table.py` | Assembles the paper's main results table from all scored conditions |
+| `build_table.py` | Assembles the paper's main results table from all scored conditions |
 
 This repository is intentionally scoped to only what is reported in the
 paper: three detector architectures (GLiNER, OpenPipe, Piiranha) and two
@@ -77,7 +77,7 @@ python3 run_asr_benchmark.py --asr parakeet --detector openpipe
 python3 run_asr_benchmark.py --asr parakeet --detector piiranha
 
 # Assemble the final table
-python3 build_paper_table.py
+python3 build_table.py
 ```
 
 Each script is independently resumable: cached transcripts
@@ -114,7 +114,7 @@ detector is never penalized for entity types outside its scope.
 For the two ASR conditions, a detector's predicted spans are computed on
 the ASR transcript, then mapped back to the original ground-truth text's
 character coordinates via word-level sequence alignment
-(`paper_scoring.py`). Clips where the transcript has diverged too far
+(`scoring.py`). Clips where the transcript has diverged too far
 from the original text to trust this mapping (aligned word overlap below
 30%) are excluded from scoring for that condition and reported as
 alignment failures in each script's console output.
