@@ -1,5 +1,5 @@
 """
-paper_asr.py
+asr.py
 
 The two ASR conditions evaluated in the paper, alongside ground-truth text
 (which needs no transcription step at all):
