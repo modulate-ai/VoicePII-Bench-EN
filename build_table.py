@@ -1,5 +1,5 @@
 """
-build_paper_table.py
+build_table.py
 
 Assembles the paper's Table 1: span-level F1 (strict, compound-strict,
 lenient) for the 3 detectors (GLiNER, OpenPipe, Piiranha) under the 3
