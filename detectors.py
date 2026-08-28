@@ -1,5 +1,5 @@
 """
-paper_detectors.py
+detectors.py
 
 The three PII/PHI detection architectures evaluated in the paper:
   - GLiNER (nvidia/gliner-PII): zero-shot NER, full 109/109 entity coverage.
