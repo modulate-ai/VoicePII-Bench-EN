@@ -1,5 +1,5 @@
 """
-paper_scoring.py
+scoring.py
 
 Shared scoring logic for all three conditions (ground truth, Cohere
 Transcribe, Parakeet TDT) evaluated in the paper. Three match-stringency
