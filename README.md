@@ -53,6 +53,8 @@ python3 -m venv venv
 source venv/bin/activate   # on Windows: venv\Scripts\activate
 
 pip install torch transformers>=5.4.0 gliner pii-redaction
+pip install librosa
+pip install accelerate
 
 # Cohere Transcribe is a gated model -- accept its license on the model
 # page, then authenticate:
