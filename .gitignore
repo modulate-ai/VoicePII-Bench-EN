@@ -1,0 +1,14 @@
+venv/
+benchmark_venv/
+.env
+.DS_Store
+__pycache__/
+*.pyc
+reference_clips/
+mdc_cache/
+original_elevenlabs_results/
+ground_truth_raw_*/
+transcripts_*/
+*_overall.csv
+*_results.csv
+*_wer.csv

@@ -22,6 +22,10 @@ upon acceptance.
 | `run_ground_truth_benchmark.py` | Scores a detector directly against ground-truth text (the oracle condition) |
 | `run_asr_benchmark.py` | Transcribes audio with a chosen ASR system, then scores a detector against the resulting transcript |
 | `build_table.py` | Assembles the paper's main results table from all scored conditions |
+| `voices.py` | Maps each of the dataset's 12 (accent, gender) voice slots to the open-source TTS engine and voice used to synthesize it |
+| `fetch_reference_clips.py` | Sources the Chatterbox voice-cloning reference clips from Mozilla Common Voice accent-filtered subsets |
+| `generate_audio_en.py` | Regenerates `audio_en/` from `pii_phi_voice_benchmark_dataset.csv` using the voice map in `voices.py` |
+| `relabel_voice_metadata.py` | One-time rewrite of the CSV's voice metadata columns to match the open-source regeneration pipeline |
 
 This repository is intentionally scoped to only what is reported in the
 paper: three detector architectures (GLiNER, OpenPipe, Piiranha) and two
@@ -38,8 +42,8 @@ Limitations in the paper).
 - **Piiranha** (`iiiorg/piiranha-v1-detect-personal-information`) -- fixed-taxonomy token classifier
 
 **ASR systems** (selected for a substantial accuracy gap on our audio):
-- **Cohere Transcribe** (`CohereLabs/cohere-transcribe-03-2026`) -- 6.49% WER
-- **Parakeet TDT** (`nvidia/parakeet-tdt-0.6b-v3`) -- 20.64% WER
+- **Cohere Transcribe** (`CohereLabs/cohere-transcribe-03-2026`) -- 3.55% WER
+- **Parakeet TDT** (`nvidia/parakeet-tdt-0.6b-v3`) -- 32.14% WER
 
 ## Setup
 
@@ -136,10 +140,16 @@ alignment failures in each script's console output.
 545 short synthetic spoken utterances (21-35 words, ~8-14 seconds each),
 each containing exactly one PII/PHI value from a taxonomy of 109 entity
 classes across 10 categories. Script text was LLM-generated and
-subsequently reviewed and corrected by human annotators; audio was
+subsequently reviewed and corrected by human annotators; audio is
 synthesized via text-to-speech across a 12-voice pool stratified across 8
-accent categories and both genders, with all audio likewise
-human-reviewed for synthesis artifacts.
+accent categories and both genders.
+
+Audio is generated entirely with open-source TTS engines -- Kokoro-82M
+(Apache 2.0) and Chatterbox (MIT) -- rather than a closed API, so that the
+dataset itself can be freely redistributed under this repository's own
+license. See `voices.py` for the per-voice-slot engine mapping and
+`generate_audio_en.py` to regenerate `audio_en/` from the ground-truth
+CSV.
 
 **All PII/PHI values in this dataset are synthetically generated and do
 not correspond to any real individual.**
