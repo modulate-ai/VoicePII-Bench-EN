@@ -1,14 +1,87 @@
-# PII/PHI Detection Under Real-World ASR Noise: Benchmark and Code
+<div align="center">
+  <img src="docs/images/voicepii-hero.svg" alt="VoicePII-Bench-EN: PII/PHI detection under ASR noise" width="100%">
 
-This repository contains the dataset and benchmark harness for our paper
-evaluating how automatic speech recognition (ASR) transcription quality
-affects downstream PII/PHI detection across three open-source detector
-architectures.
+  <p>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/code-MIT-12163a.svg?style=flat-square" alt="MIT code license"></a>
+    <a href="#license"><img src="https://img.shields.io/badge/dataset-CC--BY--4.0-4a1a78?style=flat-square" alt="CC-BY-4.0 dataset"></a>
+    <a href="pii_phi_voice_benchmark_dataset.csv"><img src="https://img.shields.io/badge/clips-545-d6405f?style=flat-square" alt="545 clips"></a>
+    <a href="#dataset"><img src="https://img.shields.io/badge/entity_classes-109-8d3a8c?style=flat-square" alt="109 entity classes"></a>
+    <a href="#setup"><img src="https://img.shields.io/badge/Python-3.9+-12163a?style=flat-square&logo=python&logoColor=white" alt="Python 3.9+"></a>
+  </p>
 
-**Note (anonymous review copy):** this repository has been anonymized for
-double-blind review. The full dataset (audio + ground-truth labels), a
-persistent citation, and any author-identifying information will be added
-upon acceptance.
+  <h3>What happens to PII/PHI detection when the text comes from speech?</h3>
+
+  <p>
+    A synthetic spoken-PII benchmark and reproducible harness that measures how ASR
+    errors propagate into three open-source PII/PHI detectors, from oracle text
+    all the way to noisy transcripts.
+  </p>
+
+  <p>
+    <a href="#whats-included"><b>What's included</b></a> ·
+    <a href="#how-it-works"><b>How it works</b></a> ·
+    <a href="#setup"><b>Setup</b></a> ·
+    <a href="#reproducing-the-papers-results-table"><b>Reproduce</b></a> ·
+    <a href="#scoring-methodology"><b>Scoring</b></a> ·
+    <a href="#dataset"><b>Dataset</b></a>
+  </p>
+</div>
+
+> **Anonymous review copy.** This repository has been anonymized for double-blind
+> review. The full dataset (audio + ground-truth labels), a persistent citation,
+> and any author-identifying information will be added upon acceptance.
+
+## Overview
+
+Voice agents, call-center analytics and meeting tools all run PII/PHI detection on
+**ASR transcripts**, not on clean text. VoicePII-Bench-EN isolates that gap. Each of
+the 545 clips contains exactly one sensitive value, so every detection is traceable
+to a known character span.
+
+| | |
+| --- | --- |
+| **545** clips | 21-35 words, about 8-14 seconds each |
+| **109** entity classes | across 10 categories |
+| **3** detectors | GLiNER, OpenPipe, Piiranha |
+| **2** ASR systems | Cohere Transcribe (6.49% WER), Parakeet TDT (20.64% WER) |
+| **3** conditions | ground truth (oracle), Cohere transcript, Parakeet transcript |
+
+Example clip (`pii_phi_voice_benchmark_dataset.csv`):
+
+> *"Hi, thanks for picking up. My license number is* **RN-448291**, *could you confirm that's correct?..."*
+> entity class: `Professional License Number`
+
+## How it works
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 24, "rankSpacing": 36, "padding": 6, "wrappingWidth": 260, "htmlLabels": true}, "themeVariables": {"fontSize": "13px"}}}%%
+flowchart LR
+    classDef data fill:#dbeafe,stroke:#2563eb,color:#0f172a
+    classDef code fill:#e5e7eb,stroke:#4b5563,color:#0f172a
+    classDef model fill:#ede9fe,stroke:#7c3aed,color:#0f172a
+
+    A["<b>1. Audio</b><br/>545 clips"]:::data
+    B["<b>2. ASR</b><br/>Cohere, Parakeet"]:::model
+    C["<b>3. Detector</b><br/>GLiNER, OpenPipe, Piiranha"]:::model
+    D["<b>4. Span match</b><br/>strict, lenient"]:::code
+    E["<b>5. F1 table</b><br/>detector x ASR"]:::code
+    G["<b>Ground-truth text</b><br/>oracle"]:::data
+
+    A -->|audio| B
+    B -->|transcript| C
+    G -.->|oracle| C
+    C -->|spans| D
+    D -->|scores| E
+```
+
+Blue steps are data, purple steps run models, grey steps are scoring code. The dashed path is the oracle condition, which skips ASR.
+
+1. **Transcribe** each clip with an ASR system (`asr.py`).
+2. **Detect** PII/PHI spans in the transcript with a detector (`detectors.py`).
+3. **Align** predicted spans back to the original text's character offsets by word-level sequence alignment (`scoring.py`).
+4. **Score** against ground truth with four span-matching metrics, then assemble the results table (`build_table.py`).
+
+The oracle condition skips step 1 and runs the detector directly on the ground-truth script, which gives the ceiling each detector can reach.
 
 ## What's Included
 
@@ -25,21 +98,26 @@ upon acceptance.
 
 This repository is intentionally scoped to only what is reported in the
 paper: three detector architectures (GLiNER, OpenPipe, Piiranha) and two
-ASR systems (Cohere Transcribe, Parakeet TDT), evaluated on the
-English-language portion of a larger benchmark we constructed. A broader
-multilingual extension exists but is outside the scope of this paper (see
-Limitations in the paper).
+ASR systems (Cohere Transcribe, Parakeet TDT), evaluated on the English-language
+portion of a larger benchmark we constructed. A broader multilingual extension
+exists but is outside the scope of this paper (see Limitations in the paper).
 
 ## Detectors and ASR Systems Evaluated
 
-**Detectors** (span different architectural approaches to PII/PHI detection):
-- **GLiNER** (`nvidia/gliner-PII`) -- zero-shot NER, targets arbitrary entity labels at inference time
-- **OpenPipe** (`PII-Redact-General`) -- generative model, tags entities inline in rewritten text
-- **Piiranha** (`iiiorg/piiranha-v1-detect-personal-information`) -- fixed-taxonomy token classifier
+**Detectors** (different architectural approaches to PII/PHI detection):
+
+| Detector | Model | Approach |
+|---|---|---|
+| **GLiNER** | `nvidia/gliner-PII` | Zero-shot NER, targets arbitrary entity labels at inference time |
+| **OpenPipe** | `PII-Redact-General` | Generative model, tags entities inline in rewritten text |
+| **Piiranha** | `iiiorg/piiranha-v1-detect-personal-information` | Fixed-taxonomy token classifier |
 
 **ASR systems** (selected for a substantial accuracy gap on our audio):
-- **Cohere Transcribe** (`CohereLabs/cohere-transcribe-03-2026`) -- 6.49% WER
-- **Parakeet TDT** (`nvidia/parakeet-tdt-0.6b-v3`) -- 20.64% WER
+
+| ASR | Model | WER |
+|---|---|---|
+| **Cohere Transcribe** | `CohereLabs/cohere-transcribe-03-2026` | 6.49% |
+| **Parakeet TDT** | `nvidia/parakeet-tdt-0.6b-v3` | 20.64% |
 
 ## Setup
 
