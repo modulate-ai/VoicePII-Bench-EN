@@ -78,6 +78,11 @@ def get_parakeet_pipeline():
 
 def transcribe_with_parakeet(audio_path, language_code="en"):
     pipe = get_parakeet_pipeline()
+    # max_new_tokens does NOT bound total output length against a decoder
+    # repetition loop: on 4/545 clips (all Chatterbox-synthesized) the
+    # decoder re-emits a single token for the rest of the clip instead of
+    # terminating, producing transcripts of 500-1300+ words (confirmed via
+    # word count vs. audio duration) and per-clip WER as high as 46.8.
     result = pipe(audio_path, max_new_tokens=440)
     return result["text"].strip()
 

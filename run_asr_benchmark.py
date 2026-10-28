@@ -121,7 +121,9 @@ def main():
     print(f"Wrote {wer_out}")
     if wer_rows:
         avg_wer = sum(r["error_rate"] for r in wer_rows) / len(wer_rows)
-        print(f"Average WER ({args.asr}): {avg_wer:.4f}")
+        capped = sum(min(r["error_rate"], 1.0) for r in wer_rows) / len(wer_rows)
+        n_over = sum(r["error_rate"] > 1.0 for r in wer_rows)
+        print(f"Average WER ({args.asr}): {avg_wer:.4f} raw | {capped:.4f} capped at 100% | {n_over} clips above 100%")
 
     # ---- Phase 2: run the detector on each transcript, align, score ----
     detail_rows = []

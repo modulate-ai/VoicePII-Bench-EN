@@ -58,12 +58,12 @@ REFERENCE_SLOTS = {
         "dataset_name": "Common Voice Scripted Speech 26.0 - Australian English",
         "gender": "male_masculine",
     },
-    "Indian-English Female 1": {
+    "Indian/South Asian Female 1": {
         "dataset_id": "cmrt70sar001umm07jwxzhw89",
         "dataset_name": "Common Voice Scripted Speech 26.0 - South Asian English",
         "gender": "female_feminine",
     },
-    "Indian-English Male 1": {
+    "Indian/South Asian Male 1": {
         "dataset_id": "cmrt70sar001umm07jwxzhw89",
         "dataset_name": "Common Voice Scripted Speech 26.0 - South Asian English",
         "gender": "male_masculine",
@@ -121,7 +121,7 @@ def extract_clip(archive_path, clip_path, out_path):
 
 
 def fetch_slot(voice_name, spec, manifest):
-    slug = voice_name.lower().replace(" ", "_").replace("-", "_")
+    slug = voice_name.lower().replace(" ", "_").replace("-", "_").replace("/", "_")
     out_path = os.path.join(OUT_DIR, f"{slug}.mp3")
     if os.path.exists(out_path):
         print(f"SKIP {voice_name}: {out_path} already exists")

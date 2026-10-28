@@ -23,7 +23,8 @@
     <a href="#setup"><b>Setup</b></a> ·
     <a href="#reproducing-the-papers-results-table"><b>Reproduce</b></a> ·
     <a href="#scoring-methodology"><b>Scoring</b></a> ·
-    <a href="#dataset"><b>Dataset</b></a>
+    <a href="#dataset"><b>Dataset</b></a> ·
+    <a href="#voices-and-audio-generation"><b>Voices</b></a>
   </p>
 </div>
 
@@ -43,7 +44,7 @@ to a known character span.
 | **545** clips | 21-35 words, about 8-14 seconds each |
 | **109** entity classes | across 10 categories |
 | **3** detectors | GLiNER, OpenPipe, Piiranha |
-| **2** ASR systems | Cohere Transcribe (3.55% WER), Parakeet TDT (32.14% WER) |
+| **2** ASR systems | Cohere Transcribe (3.55% WER), Parakeet TDT (10.3% WER, capped) |
 | **3** conditions | ground truth (oracle), Cohere transcript, Parakeet transcript |
 
 Example clip (`pii_phi_voice_benchmark_dataset.csv`):
@@ -121,7 +122,15 @@ exists but is outside the scope of this paper (see Limitations in the paper).
 | ASR | Model | WER |
 |---|---|---|
 | **Cohere Transcribe** | `CohereLabs/cohere-transcribe-03-2026` | 3.55% |
-| **Parakeet TDT** | `nvidia/parakeet-tdt-0.6b-v3` | 32.14% |
+| **Parakeet TDT** | `nvidia/parakeet-tdt-0.6b-v3` | 10.3% (capped) |
+
+Parakeet's WER is reported with each clip's error rate capped at 100% before
+averaging: on 4 of 545 clips its decoder enters a repetition loop (one
+token re-emitted for the rest of the clip) and does not terminate normally,
+producing per-clip WER as high as 46.8 that would otherwise dominate the
+mean. The uncapped raw mean is 32.1%; median WER (unaffected by capping)
+is 3.6%. All 4 affected clips are Chatterbox-synthesized voices -- none
+are Kokoro -- see [Voices and audio generation](#voices-and-audio-generation).
 
 ## Setup
 
@@ -191,7 +200,8 @@ We report four span-matching metrics for every prediction:
   transparency; for Piiranha specifically, this correction is necessary
   because a confirmed tokenizer artifact otherwise affects nearly every
   predicted span (raw strict F1 of 0.0 vs. trimmed-strict F1 in line with
-  lenient F1). No analogous gap was observed for GLiNER or OpenPipe.
+  lenient F1 (ground-truth condition only)). No analogous gap was
+  observed for GLiNER or OpenPipe.
 - **Compound-strict**: credits a detector for correctly decomposing one
   ground-truth entity into two or more adjacent predicted spans (e.g. a
   full name split into separate given-name and surname spans). This
@@ -219,18 +229,50 @@ alignment failures in each script's console output.
 each containing exactly one PII/PHI value from a taxonomy of 109 entity
 classes across 10 categories. Script text was LLM-generated and
 subsequently reviewed and corrected by human annotators; audio is
-synthesized via text-to-speech across a 12-voice pool stratified across 8
-accent categories and both genders.
-
-Audio is generated entirely with open-source TTS engines -- Kokoro-82M
-(Apache 2.0) and Chatterbox (MIT) -- rather than a closed API, so that the
-dataset itself can be freely redistributed under this repository's own
-license. See `voices.py` for the per-voice-slot engine mapping and
-`generate_audio_en.py` to regenerate `audio_en/` from the ground-truth
-CSV.
+synthesized via text-to-speech across a 12-voice pool stratified across 5
+accent categories and both genders. See
+[Voices and audio generation](#voices-and-audio-generation) for the full
+voice breakdown and provenance.
 
 **All PII/PHI values in this dataset are synthetically generated and do
 not correspond to any real individual.**
+
+## Voices and audio generation
+
+Audio was synthesized with two open-source engines:
+
+- **Kokoro-82M** (Apache-2.0): six built-in voices, 274 clips.
+- **Chatterbox** (MIT): six voices zero-shot cloned from Common Voice
+  reference clips (CC0, Common Voice release 26.0), 271 clips.
+
+| Voice | Engine | Voice ID / Common Voice clip | Common Voice accent tag | Accent used | Gender |
+|---|---|---|---|---|---|
+| American Female 1 | Kokoro | `af_heart` | n/a | American | F |
+| American Female 2 | Kokoro | `af_bella` | n/a | American | F |
+| American Male 1 | Kokoro | `am_michael` | n/a | American | M |
+| American Male 2 | Kokoro | `am_adam` | n/a | American | M |
+| British Female 1 | Kokoro | `bf_emma` | n/a | British | F |
+| British Male 1 | Kokoro | `bm_george` | n/a | British | M |
+| British Male 2 | Chatterbox | `common_voice_en_17246141` | England English | British | M |
+| Australian Female 1 | Chatterbox | `common_voice_en_683132` | Australian English | Australian | F |
+| Australian Male 1 | Chatterbox | `common_voice_en_17403987` | Australian English | Australian | M |
+| Irish Female 1 | Chatterbox | `common_voice_en_17790111` | Irish English | Irish | F |
+| Indian/South Asian Female 1 | Chatterbox | `common_voice_en_25950636` | India and South Asia | Indian/South Asian | F |
+| Indian/South Asian Male 1 | Chatterbox | `common_voice_en_26008777` | India and South Asia | Indian/South Asian | M |
+
+**Accent labels.** Kokoro voices are labeled by the model's documented
+language variant (American or British English). Cloned voices are labeled by
+the Common Voice accent tag of their reference clip. Neither is a verification
+of the accent in the synthesized audio, and each accent category has one to
+four voices (Irish has one), so we make no per-accent claims.
+
+**Cloned voices.** The six Chatterbox voices are synthetic clones of voices of
+Common Voice contributors. We make no attempt to identify speakers, and we
+publish only clip IDs, not the reference recordings or any speaker identifiers.
+
+**Watermark.** Per its documentation, Chatterbox embeds an imperceptible PerTh
+neural watermark in every output, so the 271 Chatterbox clips carry it. We did
+not test whether it affects ASR or detector behavior.
 
 ## License
 
