@@ -88,10 +88,80 @@ def transcribe_with_parakeet(audio_path, language_code="en"):
 
 
 # ---------------------------------------------------------------------------
+# Oruk Fourier 2B (oruk/oruk-fourier-2b, CC BY-NC 4.0)
+# ---------------------------------------------------------------------------
+
+ORUK_FOURIER_2B_MODEL_ID = "oruk/oruk-fourier-2b"
+ORUK_FOURIER_2B_REVISION = "8c2a8871f1304aa2f634da4fb95e24438c4945b9"
+ORUK_FOURIER_2B_NATIVE_FILES = [
+    "chat_template.jinja",
+    "config.json",
+    "generation_config.json",
+    "model.safetensors",
+    "processor_config.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+]
+_oruk_fourier_model = None
+_oruk_fourier_processor = None
+
+
+def get_oruk_fourier_2b_model_and_processor():
+    global _oruk_fourier_model, _oruk_fourier_processor
+    if _oruk_fourier_model is None:
+        from huggingface_hub import snapshot_download
+        import torch
+        from transformers import AutoModelForMultimodalLM, AutoProcessor
+
+        print(f"Loading {ORUK_FOURIER_2B_MODEL_ID}@{ORUK_FOURIER_2B_REVISION[:8]} (native BF16)...")
+        local_dir = snapshot_download(
+            repo_id=ORUK_FOURIER_2B_MODEL_ID,
+            revision=ORUK_FOURIER_2B_REVISION,
+            allow_patterns=ORUK_FOURIER_2B_NATIVE_FILES,
+        )
+        _oruk_fourier_processor = AutoProcessor.from_pretrained(local_dir, local_files_only=True)
+        _oruk_fourier_processor.tokenizer.padding_side = "left"
+        device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
+        dtype = torch.bfloat16 if device in ("cuda", "mps") else torch.float32
+        _oruk_fourier_model = (
+            AutoModelForMultimodalLM.from_pretrained(
+                local_dir, local_files_only=True, dtype=dtype
+            )
+            .to(device)
+            .eval()
+        )
+    return _oruk_fourier_model, _oruk_fourier_processor
+
+
+def transcribe_with_oruk_fourier_2b(audio_path, language_code="en"):
+    import librosa
+    import numpy as np
+    import torch
+
+    model, processor = get_oruk_fourier_2b_model_and_processor()
+    audio, _ = librosa.load(audio_path, sr=16000, mono=True)
+    audio = np.asarray(audio, dtype=np.float32)
+    lang = "English" if language_code in ("en", "English") else language_code
+    inputs = processor.apply_transcription_request(
+        audio=[audio],
+        language=[lang],
+        return_tensors="pt",
+        processor_kwargs={"padding": True},
+    )
+    inputs = inputs.to(model.device, dtype=model.dtype)
+    with torch.inference_mode():
+        output_ids = model.generate(**inputs, max_new_tokens=256)
+    gen_ids = output_ids[:, inputs["input_ids"].shape[1] :]
+    texts = processor.decode(gen_ids, return_format="transcription_only")
+    text = texts[0] if isinstance(texts, list) and texts else str(texts)
+    return text.strip()
+
+
+# ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
 
-ASR_CONDITIONS = ["cohere", "parakeet"]
+ASR_CONDITIONS = ["cohere", "parakeet", "oruk_fourier_2b"]
 
 
 def transcribe(asr_condition, audio_path, language_code="en"):
@@ -99,4 +169,6 @@ def transcribe(asr_condition, audio_path, language_code="en"):
         return transcribe_with_cohere(audio_path, language_code)
     if asr_condition == "parakeet":
         return transcribe_with_parakeet(audio_path, language_code)
+    if asr_condition == "oruk_fourier_2b":
+        return transcribe_with_oruk_fourier_2b(audio_path, language_code)
     raise ValueError(f"Unknown ASR condition: {asr_condition!r}. Must be one of {ASR_CONDITIONS}")

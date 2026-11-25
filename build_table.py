@@ -23,6 +23,7 @@ CONDITIONS = [
     ("Ground Truth", None),  # (label, asr condition or None for ground truth)
     ("Cohere Transcribe", "cohere"),
     ("Parakeet TDT", "parakeet"),
+    ("Oruk Fourier 2B", "oruk_fourier_2b"),
 ]
 
 # For Piiranha specifically, raw strict is corrupted by a confirmed
